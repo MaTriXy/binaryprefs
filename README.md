@@ -1,9 +1,9 @@
-[![Build Status](https://travis-ci.org/iamironz/binaryprefs.svg?branch=master)](https://travis-ci.org/iamironz/binaryprefs)
+[![Build Status](https://travis-ci.org/yandextaxitech/binaryprefs.svg?branch=master)](https://travis-ci.org/yandextaxitech/binaryprefs)
 [![API](https://img.shields.io/badge/API-14%2B-blue.svg?style=flat)](https://android-arsenal.com/api?level=14)
-<a href="http://www.methodscount.com/?lib=com.github.iamironz%3Abinaryprefs%3A1.0.0-BETA-2"><img src="https://img.shields.io/badge/Methods count-636-e91e63.svg"/></a>
-<a href="http://www.methodscount.com/?lib=com.github.iamironz%3Abinaryprefs%3A1.0.0-BETA-2"><img src="https://img.shields.io/badge/Size-80 KB-e91e63.svg"/></a>
+<a href="http://www.methodscount.com/?lib=com.github.yandextaxitech%3Abinaryprefs%3A1.0.0"><img src="https://img.shields.io/badge/Methods count-636-e91e63.svg"/></a>
+<a href="http://www.methodscount.com/?lib=com.github.yandextaxitech%3Abinaryprefs%3A1.0.0"><img src="https://img.shields.io/badge/Size-80 KB-e91e63.svg"/></a>
 [![Android Arsenal](https://img.shields.io/badge/Android%20Arsenal-Binary%20Preferences-brightgreen.svg?style=flat)](https://android-arsenal.com/details/1/5931)
-[![](https://jitpack.io/v/iamironz/binaryprefs.svg)](https://jitpack.io/#iamironz/binaryprefs)
+[![](https://jitpack.io/v/yandextaxitech/binaryprefs.svg)](https://jitpack.io/#yandextaxitech/binaryprefs)
 
 
 ## Binary Preferences
@@ -49,7 +49,7 @@ Add dependency:
 
 ```groovy
 dependencies {
-   compile "com.github.iamironz:binaryprefs:$version"
+   compile "com.github.yandextaxitech:binaryprefs:$version"
 }
 ```
 
@@ -169,7 +169,7 @@ object mutability instead in-memory cache mutability.
 But if your data class immutable and you define all values from constructor you just 
 can return `this` from method.
 
-Sample for explanation: [TestUser.java](https://github.com/iamironz/binaryprefs/blob/master/library/src/test/java/com/ironz/binaryprefs/impl/TestUser.java#L68-L121)
+Sample for explanation: [TestUser.java](https://github.com/yandextaxitech/binaryprefs/blob/master/library/src/test/java/com/ironz/binaryprefs/impl/TestUser.java#L68-L121)
 
 P.S.: 
 If you have group of preferences which always stores under one transaction and you want
@@ -248,12 +248,12 @@ DumpReceiver.unregister(name);
 12. ~~File name encrypt~~ completed
 13. ~~Finalize serialization and persistence contract~~ completed
 14. ~~Default preferences migration mechanism~~ complete
-15. In-memory cache initialization strategies
-16. `byte[]` support
+15. ~~In-memory cache initialization strategies~~
+16. ~~`byte[]` support~~
 17. IPC transactions without 1mb limit
 18. Limiting strategies (UNLIMITED, LRU, FIFO)
 19. RxJava support
-20. `sun.misc.Unsafe` serialization mode for api 21+
+20. ~~`sun.misc.Unsafe` serialization mode for api 21+~~ - not actual because private api usage will be limited at runtime.
 
 
 ## License
