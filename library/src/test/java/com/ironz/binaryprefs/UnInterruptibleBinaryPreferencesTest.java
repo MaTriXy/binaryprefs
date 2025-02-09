@@ -2,9 +2,13 @@ package com.ironz.binaryprefs;
 
 import android.annotation.SuppressLint;
 import android.content.SharedPreferences;
+
 import com.ironz.binaryprefs.exception.TransactionInvalidatedException;
 import com.ironz.binaryprefs.file.directory.DirectoryProvider;
 import com.ironz.binaryprefs.impl.TestUser;
+import com.ironz.binaryprefs.task.barrierprovider.FutureBarrierProvider;
+import com.ironz.binaryprefs.task.barrierprovider.impl.UnInterruptableFutureBarrierProvider;
+
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -17,10 +21,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
 @SuppressWarnings("deprecation")
-public final class BinaryPreferencesTest {
+public final class UnInterruptibleBinaryPreferencesTest {
 
     private static final String KEY_SUFFIX = "_key";
 
@@ -55,7 +63,8 @@ public final class BinaryPreferencesTest {
                 return lockDir;
             }
         };
-        preferences = creator.create(name, directoryProvider);
+        FutureBarrierProvider barrierProvider = new UnInterruptableFutureBarrierProvider();
+        preferences = creator.create(name, directoryProvider, barrierProvider);
     }
 
     @Test
@@ -466,8 +475,8 @@ public final class BinaryPreferencesTest {
         byte[] defaultValue = {};
 
         preferences.edit()
-            .putByteArray(key, value)
-            .apply();
+                .putByteArray(key, value)
+                .apply();
 
         value[0] = 13;
 

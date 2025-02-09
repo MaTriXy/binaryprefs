@@ -3,7 +3,7 @@ apply plugin: 'com.jfrog.bintray'
 apply plugin: "com.jfrog.artifactory"
 
 group = "com.ironz.binaryprefs"
-version = "1.0.0-BETA2"
+version = "1.0.1"
 
 android {
 
@@ -12,12 +12,12 @@ android {
         targetCompatibility JavaVersion.VERSION_1_7
     }
 
-    compileSdkVersion 26
-    buildToolsVersion "26.0.2"
+    compileSdkVersion 28
+    buildToolsVersion "28.0.3"
 
     defaultConfig {
-        minSdkVersion 14
-        targetSdkVersion 26
+        minSdkVersion 21
+        targetSdkVersion 28
         versionCode 1
         versionName version
     }
@@ -34,7 +34,7 @@ android {
 }
 
 dependencies {
-    testCompile 'junit:junit:4.12'
+    testImplementation 'junit:junit:4.12'
 }
 
 bintray {
@@ -47,7 +47,7 @@ bintray {
         websiteUrl = "https://github.com/iamironz/binaryprefs"
         vcsUrl = "https://github.com/iamironz/binaryprefs"
         githubRepo = "https://github.com/iamironz/binaryprefs"
-        githubReleaseNotesFile = "https://github.com/iamironz/binaryprefs/blob/master/CHANGELOG.md"
+        githubReleaseNotesFile = "https://github.com/yandextaxitech/binaryprefs/blob/master/CHANGELOG.md"
         publicDownloadNumbers = true
         licenses = ["Apache-2.0"]
         publish = true

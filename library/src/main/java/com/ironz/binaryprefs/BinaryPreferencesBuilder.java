@@ -3,6 +3,7 @@ package com.ironz.binaryprefs;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Looper;
+
 import com.ironz.binaryprefs.cache.candidates.CacheCandidateProvider;
 import com.ironz.binaryprefs.cache.candidates.ConcurrentCacheCandidateProvider;
 import com.ironz.binaryprefs.cache.provider.CacheProvider;
@@ -31,6 +32,9 @@ import com.ironz.binaryprefs.serialization.serializer.persistable.Persistable;
 import com.ironz.binaryprefs.serialization.serializer.persistable.PersistableRegistry;
 import com.ironz.binaryprefs.task.ScheduledBackgroundTaskExecutor;
 import com.ironz.binaryprefs.task.TaskExecutor;
+import com.ironz.binaryprefs.task.barrierprovider.FutureBarrierProvider;
+import com.ironz.binaryprefs.task.barrierprovider.impl.InterruptableFutureBarrierProvider;
+import com.ironz.binaryprefs.task.barrierprovider.impl.UnInterruptableFutureBarrierProvider;
 
 import java.io.File;
 import java.util.List;
@@ -46,14 +50,12 @@ import java.util.concurrent.locks.ReadWriteLock;
 @SuppressWarnings("unused")
 public final class BinaryPreferencesBuilder {
 
-    private static final String INCORRECT_THREAD_INIT_MESSAGE = "Preferences should be instantiated in the main thread.";
-
     /**
      * Default name of preferences which name has not been defined.
      */
     @SuppressWarnings("WeakerAccess")
     public static final String DEFAULT_NAME = "default";
-
+    private static final String INCORRECT_THREAD_INIT_MESSAGE = "Preferences should be instantiated in the main thread.";
     private final ParametersProvider parametersProvider = new ParametersProvider();
 
     private final Map<String, ReadWriteLock> locks = parametersProvider.getLocks();
@@ -70,10 +72,12 @@ public final class BinaryPreferencesBuilder {
     private File baseDir;
     private String name = DEFAULT_NAME;
     private boolean supportInterProcess = false;
+    private boolean allowBuildOnBackgroundThread = false;
     private MemoryCacheMode memoryCacheMode = MemoryCacheMode.LAZY;
     private KeyEncryption keyEncryption = KeyEncryption.NO_OP;
     private ValueEncryption valueEncryption = ValueEncryption.NO_OP;
     private ExceptionHandler exceptionHandler = ExceptionHandler.PRINT;
+    private TaskExecutorMode taskExecutorMode = TaskExecutorMode.NON_INTERRUPTIBLE;
 
     /**
      * Creates builder with base parameters.
@@ -147,20 +151,6 @@ public final class BinaryPreferencesBuilder {
     }
 
     /**
-     * Defines target mode for various in-memory cache fill scenario
-     */
-    public enum MemoryCacheMode {
-        /**
-         * Fill cache value only after request, e.g. just in time
-         */
-        LAZY,
-        /**
-         * Fill cache immediately after preferences initialization
-         */
-        EAGER
-    }
-
-    /**
      * Defines in-memory cache fetching strategy.
      * Default value is {@code true}.
      *
@@ -209,6 +199,16 @@ public final class BinaryPreferencesBuilder {
     }
 
     /**
+     * @param executorMode required execution mode.
+     *                     Default value is {@link TaskExecutorMode#NON_INTERRUPTIBLE}
+     * @return current builder instance
+     */
+    public BinaryPreferencesBuilder executorMode(TaskExecutorMode executorMode) {
+        this.taskExecutorMode = executorMode;
+        return this;
+    }
+
+    /**
      * Registers {@link Persistable} data-object for de/serialization process.
      * All {@link Persistable} data-objects should be registered for understanding
      * de/serialization contract during cache initialization.
@@ -246,6 +246,20 @@ public final class BinaryPreferencesBuilder {
     }
 
     /**
+     * Allows to build instance of {@link BinaryPreferences} on background thread.
+     * <p>
+     * <b>WARNING:</b> instantiating preferences concurrently can
+     * lead to in-memory cache race conditions.
+     * Be sure that migration performs not in the parallel.
+     *
+     * @return current builder instance
+     */
+    public BinaryPreferencesBuilder allowBuildOnBackgroundThread() {
+        allowBuildOnBackgroundThread = true;
+        return this;
+    }
+
+    /**
      * Builds preferences instance with predefined or default parameters.
      * This method will fails if invocation performed not in the main thread.
      *
@@ -253,7 +267,7 @@ public final class BinaryPreferencesBuilder {
      * @see PreferencesInitializationException
      */
     public Preferences build() {
-        if (Looper.myLooper() != Looper.getMainLooper()) {
+        if (!allowBuildOnBackgroundThread && Looper.myLooper() != Looper.getMainLooper()) {
             throw new PreferencesInitializationException(INCORRECT_THREAD_INIT_MESSAGE);
         }
         BinaryPreferences preferences = createInstance();
@@ -269,7 +283,12 @@ public final class BinaryPreferencesBuilder {
         FileTransaction fileTransaction = new MultiProcessTransaction(fileAdapter, lockFactory, keyEncryption, valueEncryption);
         CacheCandidateProvider cacheCandidateProvider = new ConcurrentCacheCandidateProvider(name, cacheCandidates);
         CacheProvider cacheProvider = new ConcurrentCacheProvider(name, caches);
-        TaskExecutor taskExecutor = new ScheduledBackgroundTaskExecutor(name, exceptionHandler, executors);
+
+        FutureBarrierProvider futureBarrierProvider = taskExecutorMode == TaskExecutorMode.INTERRUPTIBLE
+                ? new InterruptableFutureBarrierProvider()
+                : new UnInterruptableFutureBarrierProvider();
+        TaskExecutor taskExecutor = new ScheduledBackgroundTaskExecutor(name, exceptionHandler, executors, futureBarrierProvider);
+
         SerializerFactory serializerFactory = new SerializerFactory(persistableRegistry);
         EventBridge eventsBridge = supportInterProcess ? new BroadcastEventBridge(
                 context,
@@ -310,4 +329,27 @@ public final class BinaryPreferencesBuilder {
                 strategy
         );
     }
+
+    /**
+     * Defines target mode for various in-memory cache fill scenario
+     */
+    public enum MemoryCacheMode {
+        /**
+         * Fill cache value only after request, e.g. just in time
+         */
+        LAZY,
+        /**
+         * Fill cache immediately after preferences initialization
+         */
+        EAGER
+    }
+
+    /**
+     * Defines mode for proper handling while thread is interrupted, before this settings was {@link TaskExecutorMode#INTERRUPTIBLE}
+     */
+    public enum TaskExecutorMode {
+        INTERRUPTIBLE,
+        NON_INTERRUPTIBLE
+    }
+
 }

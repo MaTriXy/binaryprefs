@@ -1,26 +1,25 @@
-package com.ironz.binaryprefs.task;
+package com.ironz.binaryprefs.task.barrier.impl;
 
 import com.ironz.binaryprefs.event.ExceptionHandler;
 import com.ironz.binaryprefs.exception.FileOperationException;
+import com.ironz.binaryprefs.task.barrier.FutureBarrier;
 
 import java.util.concurrent.Future;
 
 /**
- * Meta object which holds current task state and allows blocking await.
+ * Meta object which holds current task state and allows blocking await
  */
-public final class FutureBarrier {
 
-    private final Future<?> future;
+public final class InterruptableFutureBarrier<T> implements FutureBarrier<T> {
+
+    private final Future<T> future;
     private final ExceptionHandler exceptionHandler;
 
-    FutureBarrier(Future<?> future, ExceptionHandler exceptionHandler) {
+    public InterruptableFutureBarrier(Future<T> future, ExceptionHandler exceptionHandler) {
         this.future = future;
         this.exceptionHandler = exceptionHandler;
     }
 
-    /**
-     * Complete task without exception handle and re-throws exception on higher level.
-     */
     public void completeBlockingUnsafe() {
         try {
             future.get();
@@ -29,10 +28,7 @@ public final class FutureBarrier {
         }
     }
 
-    /**
-     * Complete task with exception handle and returns result or default value for this task.
-     */
-    public Object completeBlockingWihResult(Object defValue) {
+    public T completeBlockingWihResult(T defValue) {
         try {
             return future.get();
         } catch (Exception e) {
@@ -41,10 +37,7 @@ public final class FutureBarrier {
         return defValue;
     }
 
-    /**
-     * Complete task with result returning without exception handle and re-throws exception on higher level.
-     */
-    public Object completeBlockingWithResultUnsafe() {
+    public T completeBlockingWithResultUnsafe() {
         try {
             return future.get();
         } catch (Exception e) {
@@ -52,12 +45,6 @@ public final class FutureBarrier {
         }
     }
 
-    /**
-     * Returns task execution result.
-     * Also this method will call exception handle method if task execution fails.
-     *
-     * @return status - {@code true} if task completed successfully {@code false} otherwise
-     */
     public boolean completeBlockingWithStatus() {
         try {
             future.get();
